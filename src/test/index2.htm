@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Bougival</title>
+    <meta charset="utf-8">
+    <link  href="css/main.css" rel="stylesheet"/>
+  </head>
+<body>
+    
+<div id="container"></div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r122/three.min.js"></script>
+<script src="data.js"></script>
+<script type="text/javascript">
+
+
+var renderer, scene, camera;
+
+init();
+
+
+
+function init(){
+
+    renderer = new THREE.WebGLRenderer();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	document.body.appendChild( renderer.domElement );
+
+	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 20000 );
+	camera.position.set(200, 400, 600);
+	camera.lookAt(0, 0, 0 );
+
+	scene = new THREE.Scene();
+	
+	var geometry = new THREE.BufferGeometry();
+	var positions = [];
+	var colors = [];
+	var color = new THREE.Color();
+	
+	nb_vertices = DATA.length/6;
+	
+	for (var i=0; i<nb_vertices; i++){
+		var x = DATA[6*i];
+		var y = DATA[6*i+1];
+		var z = DATA[6*i+2];
+		var r = DATA[6*i+3];
+		var g = DATA[6*i+4];
+		var b = DATA[6*i+5];
+		positions.push(5*x-100, 5*y, 5*z+200);
+		color.setRGB(r, g, b);
+		colors.push(color.r, color.g, color.b);
+	}
+	
+	
+	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+	geometry.computeBoundingSphere();
+	//
+	var material = new THREE.PointsMaterial( { size: 1, vertexColors: THREE.VertexColors } );
+	points = new THREE.Points( geometry, material );
+	scene.add( points );
+	
+	points.rotation.x = -0.3;
+	points.rotation.y = +0.0;
+	points.rotation.z = -1.6;
+	
+	L = 300;
+	l = 1.15*L
+	
+	// x axis
+	var material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+	var geom_line = new THREE.Geometry();
+	geom_line.vertices.push(new THREE.Vector3(-500, 0, -l) );
+	geom_line.vertices.push(new THREE.Vector3(+500, 0, -l) );
+	var line = new THREE.Line( geom_line, material );
+	scene.add( line );
+		
+	// y axis
+	var material = new THREE.LineBasicMaterial( { color: 0x00ff00 } );
+	var geom_line = new THREE.Geometry();
+	geom_line.vertices.push(new THREE.Vector3(-l, -500, -l) );
+	geom_line.vertices.push(new THREE.Vector3(-l, +500, -l) );
+	var line = new THREE.Line( geom_line, material );
+	scene.add( line );
+		
+	// z axis
+	var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+	var geom_line = new THREE.Geometry();
+	geom_line.vertices.push(new THREE.Vector3(-l, 0, -500) );
+	geom_line.vertices.push(new THREE.Vector3(-l, 0, +500) );
+	var line = new THREE.Line( geom_line, material );
+	scene.add( line );
+	
+	
+	var material = new THREE.LineBasicMaterial( {color: 0xffffff} );
+	
+	for (var i=-L; i<=L; i+=50){
+	
+		// y lines
+		var geom_line = new THREE.Geometry();
+		geom_line.vertices.push(new THREE.Vector3(i, 0, -L) );
+		geom_line.vertices.push(new THREE.Vector3(i, 0, +L) );
+		var line = new THREE.Line( geom_line, material );
+		scene.add( line );
+		
+		// zlines
+		var geom_line = new THREE.Geometry();
+		geom_line.vertices.push(new THREE.Vector3(-L, 0, i) );
+		geom_line.vertices.push(new THREE.Vector3(+L, 0, i) );
+		var line = new THREE.Line( geom_line, material );
+		scene.add( line );
+	}
+	
+}
+
+
+	function animate() {
+		requestAnimationFrame( animate );
+		camera.position.x += 0.005*camera.position.z;
+		camera.position.z -= 0.005*camera.position.x;
+		
+		if (camera.position.x*camera.position.x+camera.position.z*camera.position.z > 90000){
+			camera.position.x = 0.999*camera.position.x
+			camera.position.z = 0.999*camera.position.z
+		}
+		
+		if (camera.position.y > 80){
+			camera.position.y -= 0.1;
+		}
+		
+		camera.lookAt(0, 80, 0 );
+		renderer.render( scene, camera );
+	}
+	
+	animate();
+
+
+  </script>
+</body>
+</html>
