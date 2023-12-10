@@ -1,0 +1,453 @@
+\documentclass{article}
+
+\usepackage{fancyheadings}
+\usepackage{graphicx}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[francais]{babel}
+\usepackage{libertine}
+\usepackage{amsmath}
+\usepackage{courier}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{pifont}
+\usepackage{enumitem}
+%\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+\usepackage{mathtools}
+\usepackage[top=3cm, bottom=3cm, left=3cm, right=3cm]{geometry}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=red,
+    filecolor=magenta,      
+    urlcolor=blue,
+		citecolor=blue,
+}
+
+\pagestyle{fancy}
+
+\rhead{M2 Systèmes Automatiques Mobiles}
+
+
+\begin{document}
+
+\newcommand\cle{\includegraphics[scale=0.5]{images/cle.pdf}}
+
+\begin{center}
+\LARGE Positionnement GPS à partir du signal RF
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{center}
+\normalsize  Yann Méneroux 
+\end{center}
+
+\begin{center}
+11 décembre 2023 - 12 janvier 2024
+\end{center}
+
+\vspace{1.5cm}
+
+L'objectif de ces travaux pratiques consiste à estimer avec Matlab les mesures brutes de pseudo-distances\footnote{On désigne par \textit{pseudo-distance} la mesure brute effectuée par le récepteur, afin de garder en tête que cette dernière doit être corrigée en prenant en compte un certain nombre de facteurs d'erreur, pour en faire une distance physique entre le récepteur et les satellites.} à partir du signal radio-fréquence reçu par une radio logicielle. Un objectif secondaire visera à en déduire la position géographique de l'utilisateur à l'instant de la mesure. On dispose des données suivantes : \newline \newline
+
+
+
+\begin{itemize}[label=\ding{212}]
+\item \textbf{\texttt{SDRSharp\_20221105\_202954Z\_1575420000Hz\_IQ.wav}} : le fichier du signal radio-fréquence en format binaire, acquis avec un taux d'échantillonnage de 2.048 Mega-échantillons par seconde, le \texttt{\textbf{11/05/2022}} à \texttt{\textbf{20:30:11.738}} (heure du récepteur, synchronisée avec le système GPS à 1 ms près) sur l'esplanade sud du Château de Vincennes.
+\item \textbf{\texttt{igu22346\_12.sp3}} : les éphémérides de la constellation GPS ermettant d'obtenir les positions des satellites, et leurs erreurs d'horloges respectives, à l'instant de l'observation.
+\item \textbf{\texttt{lfsr.m}} : un script Matlab permettant d'émuler l'électronique interne du GPS. \newline
+\end{itemize}
+
+\noindent Les coordonnées de référence du point relevé sont données ci-dessous (vérité terrain) en coordonnées cartésiennes ECEF (Earth-Centered, Earth Fixed) : \newline
+
+\begin{center}
+\textbf{\texttt{X = 4202099.937 m, Y = 179059.028 m, Z = 4778941.838 m}}
+\end{center}
+
+\vspace{0.5cm}
+
+\noindent Travail à rendre pour le \textbf{19/01/2024} : \newline
+
+\noindent Envoyer à l'adresse email \texttt{yann.meneroux@ign.fr} avec l'objet [M2SAM] TP GPS, un \underline{unique} fichier de script Matlab \texttt{<nom\_binome\_1-nom\_binome\_2>.m} contenant les réponses aux questions ci-après. Les réponses aux questions théoriques (ne nécessitant pas de code informatique) seront données sous forme de commentaires (\%). \newline
+
+
+
+\begin{center}
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+\end{center}
+
+\vspace{0.5cm}
+
+\newpage
+
+Les observations utilisées pour ce TP ont été collectées avec un PC portable classique, équipé du programme \textit{SDR Sharp} connectée à une antenne patch active mono-fréquence ANN-MS via une clé de radio logicielle (\textit{Software Defined Radio} ou SDR) NooElec NESDR SMArTee. Les éphémérides peuvent quant à elles être récupérées a posteriori sur le serveur de l'\textit{International GNSS Service}.\newline
+
+\noindent Le travail est divisé en quatre sections : dans un premier temps, nous cherchons à montrer que le signal satellite est en théorie imperceptible pour les récepteurs situés à la surface terrestre, ce qui nous conduira à étudier dans une deuxième partie, les mécanismes de codes pseudo-aléatoires mis en oeuvre pour contourner le problème. L'estimation des pseudo-distances séparant les satellites du récepteur, fera l'objet d'une troisième partie, tandis que la dernière section sera consacrée au calcul de la position de l'utilisateur. \newline \newline \newline
+
+
+
+\noindent \large\textbf{I. Du signal... et du bruit}\normalsize \newline
+
+La constellation GPS est composée de 32 satellites orbitant à une altitude de 20 000 km. Chaque satellite émet, à l'aide d'une antenne de gain 13 dBi (gain relatif à une antenne isotrope idéale) un signal de puissance 25 W sur une porteuse de fréquence $L_1 = 1575.42$ MHz. \newline
+
+\vspace{0.5cm}
+\noindent \textbf{Q1.} On rappelle qu'une puissance $P_{[mW]}$ exprimée en milliwatts se convertit en dBm à l'aide de la formule : \newline
+
+$$P_{[dBm]} = 10 \log_{10} \Big( \frac{P_{[mW]}}{1_{[mW]}}\Big)$$  \newline
+
+
+\noindent Convertir la puissance émise par les satellites en dBm. \newline
+
+\vspace{0.5cm}
+\noindent \textbf{Q2.} On donne ci-dessous la formule de propagation de Friis, exprimant la puissance reçue par une utilisateur $P^r$, en fonction de la puissance émise $P^e$ ainsi que des gains $G^e$ et $G^r$ des antennes employées respectivement pour l'émission et la réception : \newline
+
+$$P^r_{[dBm]} = P^e_{[dBm]} + G^e_{[dBi]} + G^r_{[dBi]} + 20 \log_{10}\Big(\frac{\lambda}{4 \pi d}\Big)$$ \newline
+
+\noindent où $\lambda$ représente la longueur d'onde du signal transmis, et $d$ est la distance de propagation. \newline
+
+\noindent Calculer, en dBm puis en mW, la puissance reçue au niveau de l'antenne du récepteur GPS.\newline
+
+\vspace{0.5cm}
+\noindent \textbf{Q3.} Comparer cette puissance à celle du bruit thermique engendré par le récepteur, dont la densité spectrale de puissance (exprimée en W/Hz) vaut $k_BT$, où $T$ est la température ambiante (en Kelvin) et $k_B \approx 1.38 \times 10^{-23} ~J.K^{-1}$ est la constante de Boltzmann. On considérera que la bande passante du récepteur est de l'ordre de 2 MHz. \newline
+
+\noindent Combien vaut le ratio signal sur bruit ? Que peut-on en déduire quant à la capacité du récepteur à detecter le signal GPS ? \newline \newline
+
+
+\noindent \large\textbf{II. Le code à la rescousse}\normalsize \newline
+
+\noindent Afin de garantir la détection par le récepteur, la porteuse du signal GPS est modulée par un code binaire pseudo-aléatoire, parfaitement connu et unique pour chaque satellite. La réplication du code au niveau du récepteur et sa corrélation avec le signal reçu permet : \newline
+
+\begin{itemize}
+\item de séparer les signaux reçus par les différents satellites
+\item de dater précisemment les instants d'arrivée (et donc \textit{in fine} les temps de transmission) de ces mêmes signaux. \newline
+\end{itemize}
+
+\noindent La génération du code est effectée matériellement à l'aide d'un registre à décalage à rétroaction linéaire (LFSR, ou \textit{Linear Feedback Shift Register}) à 10 bits. Concrètement, à chaque pas de temps, un certain nombre de bits du registre sont récupérés en parallèle, puis leur somme modulo 2 (\textit{ou exclusif}, noté $\oplus$) est calculée et la valeur obtenue est insérée en tête de registre, décalant ainsi toutes les valeurs d'un rang vers la droite. \newline
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.55\textwidth]{images/lfsr.pdf}
+\caption{Exemple de LFSR correspondant au polynôme de rétroaction $X^2 + X^4 + X^7 + X^8$.}
+\label{lfsr}
+\end{figure}
+ 
+\noindent Par exemple, sur la figure \ref{lfsr}, à l'instant $t$, le registre contient la séquence $R_t = (1,0,0,1,1,0,1,0,1,1)$. On calcule la somme (modulo 2) : $0 \oplus 1 \oplus 0 \oplus 1 = 0$, insérée en tête de registre, ce qui donne la séquence $R_{t+1} = (0,1,0,0,1,1,0,1,0,1)$ au pas de temps suivant. \newline
+
+\vspace{0.5cm}
+\noindent \textbf{Q4.} En considérant en particulier ce qu'il advient lorsque la séquence est initialisée avec les bits $R_0 = (0,0,0,0,0,0,0,0,0,0)$, montrer que le nombre maximal d'états distincts pouvant être atteint par le registre ne peut pas être supérieur à 1023. \newline
+
+\vspace{0.5cm}
+\noindent \textbf{Q5.} On dit que la séquence générée est une \textit{Maximal Length Sequence} (MLS), si elle atteint cette borne supérieure. C'est le cas des codes employés dans le système GPS, qui utilise deux LFSR de polynômes $X^2+X^9$ et $X+X^2+X^5+X^7+X^8+X^9$, initialisés avec une séquence de 1, et générant respectivement les signaux $G_1$ et $G_2$, comme illustré sur la figure \ref{lfsr2}. Chaque satellite particularise alors ce signal, en récupérant deux bits spécifiques dans $G_2$, et en les sommant (modulo 2) pour fournir un signal $S_2$. Le signal pseudo-aléatoire final est alors obtenu par $G_1 \oplus S_2$. \newline
+
+ 
+\noindent Pour synthétiser ces codes en Matlab, nous utiliserons le script \texttt{lfsr.m}, contenant la fonction : \newline
+
+\begin{center}
+\texttt{\textbf{\color{blue}lfsr\color{black}(init, feedback, N)}} 
+\end{center}
+
+\vspace{0.5cm}
+
+\noindent retournant \texttt{N} états d'un LFSR dont l'état initial est donné par le vecteur \texttt{init}, et dont les bits utilisés par la rétroaction sont indiqués dans un vecteur binaire \texttt{feedback}. \newline
+
+\noindent Par exemple, pour simuler les 5 pas de temps à venir du LFSR de l'image \ref{lfsr}, on pourra écrire : \newline
+
+\begin{center}
+\texttt{\textbf{M = \color{blue}lfsr\color{black}([1,0,0,1,1,0,1,0,1,1], [0,0,1,0,1,0,0,1,1,0], 5);}} \newline
+\end{center}
+
+\noindent Par ailleurs, notons que si \texttt{feedback} décrit un LFSR de 10 bits de longueur maximale, alors l'instruction \texttt{\textbf{lfsr(init, feedback, 1023)(:,10)}}, \textit{i.e.} la dernière colonne de la matrice calculée, permet d'obtenir le code pseudo-aléatoire généré en sortie du registre. \newline
+
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.75\textwidth]{images/lfsr2.pdf}
+\caption{Génération du code pseudo-aléatoire PRN pour le satellite $S$ à l'aide de 2 LFSR. Ici, le sélecteur particularise $G_2$ en sélectionnant le couple de bits situés en 4\textsuperscript{e} et 7\textsuperscript{e} position, pour former $S_2$. Ce couple est distinct pour chaque satellite.}
+\label{lfsr2}
+\end{figure}
+
+\noindent En utilisant (plusieurs fois) la fonction \texttt{\textbf{lfsr}}, écrire (dans un nouveau script) une fonction \texttt{cacode} prenant en entrée un numéro de satellite (entre 1 et 32) et retournant les 1023 bits de son code pseudo-aléatoire (PRN). On utilisera la table \texttt{tap} du script \texttt{\textbf{lfsr.m}}, listant les codes à sélectionner afin de former $S_2$ pour chaque satellite. \newline 
+
+\noindent \textbf{Q6.} \'Exécuter l'instruction \texttt{cacode(1)} et vérifier que les 30 premiers bits de la réponse obtenue sont : \newline
+
+
+\begin{center}
+\texttt{1   1   0   0   1   0   0   0   0   0   1   1   1   0   0   1   0   1   0   0   1   0   0   1   1   1   1   0   0   1...}
+\end{center}
+
+\vspace{0.5cm}
+
+
+\noindent \textbf{Q7.} Dans le reste de ce TP, nous allons travailler avec un signal échantillonné à 2.048 MHz. Dans le système GPS, les 1023 bits du code sont modulés dans le signal sur une période de 1 milliseconde. Le code généré par la fonction \texttt{cacode} doit donc être sur-échantillonné pour être comparable à celui du signal reçu. Cette opération pourra être réalisée avec l'instruction : \newline
+
+\begin{center}
+\texttt{PRN = \color{blue}repelem\color{black}(CODE, 2048)(1023:1023:end);}
+\end{center}
+
+\vspace{0.5cm}
+
+\noindent où \texttt{CODE} désigne le vecteur de 1023 bits généré par \texttt{cacode}, tandis que \texttt{PRN} est le code final sur-échantillonné, de taille 2048. \newline
+
+
+\noindent \large\textbf{III. Mesure des pseudo-distances}\normalsize \newline
+
+\noindent On commence par charger les données du signal brut radio-fréquence reçu par le récepteur. Le fichier .wav est composée d'une entête de 44 octets, suivie de la liste des octets du signal, alternant entre les composantes en phase (I) et en quadrature (Q). Nous allons charger les 10 000 premiers échantillons, ce qui correspond approximativement\footnote{Le code de 1023 bits s'étend sur une période de 1 ms, ce qui donne une durée d'environ 0.978 $\mu$s par bit : les 10 000 premiers échantillons correspondent donc aux 9.78 premières millisecondes du signal enregistré} aux 10 premières millisecondes de l'enregistrement. 
+
+\begin{center}
+\begin{tabular}{ l l }
+\texttt{path = \color{gray}'SDRSharp\_20221105\_202954Z\_1575420000Hz\_IQ.wav'\color{black};  }       &  \texttt{\color{white}\% Suppression de l'entête de 44 octets\color{black}} 
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ l l }
+ \texttt{file\_id = \color{blue}fopen\color{black}(path);}       & \texttt{\color{OliveGreen}\% Ouverture du fichier wav\color{black}}   \\ 
+ \texttt{\color{blue}fread\color{black}(file\_id, \color{orange}44\color{black});}          & \texttt{\color{OliveGreen}\% Suppression de l'entête de 44 octets\color{black}}  \\  
+ \texttt{A = \color{blue}fread\color{black}(file\_id,  \color{orange}2e4\color{black});}     & \texttt{\color{OliveGreen}\% Lecture de 20 000 octets\color{black}}  \\    
+ \texttt{I = A(\color{orange}1\color{black}:\color{orange}2\color{black}:\color{blue}size\color{black}(A)(\color{orange}1\color{black}));}           & \texttt{\color{OliveGreen}\% Composante en phase (I)\color{black}}  \\ 
+ \texttt{Q = A(\color{orange}2\color{black}:\color{orange}2\color{black}:\color{blue}size\color{black}(A)(\color{orange}1\color{black}));}           & \texttt{\color{OliveGreen}\% Composante en quadrature (Q)\color{black}}   \\  
+ \texttt{signal = (I-\color{orange}127\color{black})+j*(Q-\color{orange}127\color{black});}~~~~~ & \texttt{\color{OliveGreen}\% Centrage et formation du signal complexe\color{black}}  \\ 
+ \texttt{\color{blue}fclose\color{black}(file\_id);}             & \texttt{\color{OliveGreen}\% Fermeture du fichier wav\color{black}}   \\ 
+\end{tabular}
+\end{center}
+
+\vspace{0.5cm}
+
+
+
+\noindent \textbf{Q8.} A l'aide de l'application ci-dessous, repérer les satellites potentiellement visibles lors de l'acquisition. \newline
+
+\begin{center}
+\begin{tabular}{ c }
+ \hline
+ Visibilité des satellites dans le ciel \\ 
+ \hline
+ \url{https://qzss.go.jp/redirect/gnssview.html}   \\
+ \hline
+\end{tabular}
+\end{center}
+\vspace{0.5cm}
+
+\noindent \textbf{Q9.} Nous allons dans un premier temps nous intéresser au satellite le plus au zénith lors de l'acquisition : \texttt{\textbf{G25}}. \newline
+
+\noindent En utilisant le script \texttt{cacode}, générer le code de ce satellite dans un vecteur \texttt{prn} de taille 2048. Afin de pouvoir effectuer la corrélation avec le signal RF, on centrera le code autour de la valeur 0 : \newline
+
+\noindent \texttt{code = (\color{blue}cacode\color{black}(prn)-\color{orange}0.5\color{black});} \newline
+
+\noindent \textbf{Q10.} On rappelle que dans un contexte non-relativiste, la fréquence reçue en un point est fonction de la vitesse radiale relative de l'émetteur, et s'exprime par : \newline
+
+$$f_{rec} = \Big(1-\frac{v}{c}\Big)f_{em}$$ \newline
+
+\noindent où $v$ désigne la vitesse relative entre l'émetteur et le récepteur, et $c$ est la vitesse de la lumière dans le vide, égale à 299 792 458 m/s. On appelle \textit{décalage doppler} la différence entre $\Delta = f_{em} - f_{rec}$.\newline
+
+\noindent Sachant que la vitesse radiale des satellites par rapport au centre de la Terre est au maximum de $\pm$ 500 m/s, calculer la plage de fréquences (autour de la fréquence nominale d'émission) dans laquelle on peut s'attendre à trouver le signal. \newline
+
+\noindent \textbf{Q11.} Pour commencer, nous allons chercher le code reçu par le satellite G25 dans un signal de fréquence doppler $\Delta = -1340$ Hz. Pour ce faire, on génère un vecteur de pas de temps \texttt{time}, à la fréquence d'acquisition du récepteur (2.048 MHz), puis on génère une exponentielle complexe à la pulsation doppler : $\omega = 2\pi \Delta$, modulée par le code $A(25)$ du satellite G25 : \newline
+
+$$r_{25}^{\omega}(t) = A(25).\exp(-j\omega t)$$
+\vspace{0.5cm}
+
+\noindent En langage Matlab : \newline 
+
+
+\noindent  \texttt{time = (\color{orange}1\color{black}:\color{blue}size\color{black}(code))/\color{orange}2048000\color{black};}\newline
+\noindent  \texttt{doppler = -\color{orange}1340\color{black};} \newline
+\noindent  \texttt{replica = code.*\color{blue}exp\color{black}(-\color{orange}2\color{black}*j*pi*doppler*time)';} \newline
+
+\noindent L'objectif consiste alors à calculer la corrélation entre cette réplique $r$ (\texttt{replica}) et le signal $s$ effectivement reçu (\texttt{signal}). On rappelle que convolution et multiplication sont analogues entre les espaces temporel et fréquentiel. Autrement dit, la corrélation de deux signaux temporels, peut être évaluée par la multiplication terme-à-terme de leurs transformées de Fourier respectives. Ou encore, en notant $\mathcal{F}[.]$ l'opérateur transformée de Fourier, on a : \newline
+
+$$r*s = \mathcal{F}^{-1}\Big[\mathcal{F}(r) \times \mathcal{F}(s)^*\Big]$$ \newline
+
+\noindent Cette observation prend toute son importance quand on sait que $\mathcal{F}$ peut être implémentée efficacement\footnote{Considérant qu'il y a deux FFT directes, une FFT inverse et une multiplication terme-à-terme à appliquer, la partie droite de l'équation précédente s'évalue en un temps $3 \times \Theta(n \log n) + \Theta(n) =  \Theta(n \log n)$ contre $\Theta(n^2)$ pour le calcul direct de la corrélation.} à l'aide de la transformation de Fourier rapide (FFT) en un temps $\Theta(n \log n)$. \newline
+
+\noindent En Matlab, on utilisera la fonction \texttt{\textbf{fft}} (prenant en entrée le signal à transformer, et la longueur effectivement utilisée pour la corrélation) et sa fonction réciproque : \texttt{\textbf{ifft}}. Pour deux signaux \texttt{\textbf{f}} et \texttt{\textbf{g}}, la corrélation \texttt{\textbf{c}} s'écrit : \newline
+
+
+\begin{center}
+\texttt{c = \color{blue}abs\color{black}((\color{blue}ifft\color{black}(\color{blue}fft\color{black}(f,l).*\color{blue}conj\color{black}(\color{blue}fft\color{black}(g,l)))));}
+\end{center}
+\vspace{0.5cm}
+
+\noindent où \texttt{\textbf{l}} est un entier désignant la longueur de corrélation. \newline
+
+\noindent Calculer et représenter avec la fonction \texttt{plot} la corrélation des signaux \texttt{signal} et \texttt{replica} sur une longueur de 10 000 échantillons. \newline
+
+\noindent Pour chercher ma présence effective du code de G25 dans le signal on pourra appeler les instructions : \newline
+
+\noindent \texttt{[A dt] = \color{blue}max\color{black}(c);} \texttt{dt = \color{blue}mod\color{black}(dt, \color{orange}2048\color{black});} \newline
+
+\noindent où \texttt{A} représente la valeur maximale de corrélation pour tous les décalages possibles, et \texttt{dt} représente le décalage atteignant ce max. Le signal étant périodique, la valeur de décalage optimale peut être prise modulo la longueur du signal.  \newline
+
+\noindent Vérifier que le décalage \texttt{dt} obtenu pour le satellite 25 est de 619 échantillons. \newline
+
+\noindent Sachant que le code (échantillonné en 2048 points) est de période 1 ms, cette valeur se convertit en unité de temps par : \newline
+
+$$dt = \frac{619}{2048} \times 1~ \mbox{ms} = 0.30225~ \mbox{ms}$$ \newline
+
+\noindent \textbf{Q12.} Réitérer l'expérience de la question Q11 en modifiant la fréquence doppler (par exemple en fixant $\Delta = 500$ Hz) et/ou le numéro du satellite visé. Vérifier qu'aucune corrélation n'est trouvée dans le signal avec ces nouveaux paramètres.\newline
+
+\noindent \textbf{Q13.} L'expérimentation effectuée à la question précédente montre que pour chaque satellite $n$ recherché dans le signal reçu $s$, on doit balayer l'ensemble des fréquences doppler de la plage définie à la question Q10 ; pour chaque fréquence $\Delta = \frac{\omega}{2\pi}$, on génère la réplique $r_{n}^\omega$ et on calcule sa corrélation avec le signal $s$. On récupère alors la fréquence doppler qui maximise la corrélation et on considère que le signal du satellite est présent dans le signal reçu si la valeur obtenue dépasse un certain seuil. \newline
+
+\noindent \'Ecrire une routine Matlab permettant, pour un satellite donné, de rechercher sa fréquence doppler avec la procédure ci-dessus. On pourra opérer la recherche avec un pas de discrétisation de 10 Hz sur la fréquence Doppler, \textit{i.e.} $\Delta$ sera à optimiser dans un set de valeurs du type : \newline
+
+$$\Delta \in \{-M ..., -30, -20, -10, 0, +10, +20, +30, ... M\}$$ \newline
+
+\noindent où $M$ est la valeur maximale du décalage doppler trouvée à la question Q10. \newline
+
+\noindent Appliquer la routine pour trouver les délais de propagation (en ms) de tous les satellites visibles à l'instant de la mesure. \newline
+
+\noindent \textbf{Q14.} Noter que si le code se répète tous les 1 ms alors, pour des émetteurs situés à au moins\footnote{En fonction de la hauteur du satellite dans le ciel par rapport à l'horizon, sa distance peut varier de 20 000 à plus de 30 000 km.} H = 20 000 km, le temps de propagation est supérieur à 66 ms, et donc le code se répète entièrement au moins 66 fois avant d'arriver au récepteur. \newline
+
+\noindent On appelle ambigüité de code cette valeur entière, qui doit être déterminée pour chaque satellite en amont du calcul de position. En pratique, un message de navigation modulé à l'intérieur du signal GPS et pourvu de tops de synchronisation, permet de lever cette ambigüité. Ne disposant pas du temps nécessaire dans ce TP pour nous attaquer au décodage de ce message de navigation, nous allons lever l'ambigüité à partir d'une position (très) approximative de la position du récepteur. \newline
+
+\noindent Pour ce faire, on prend un point quelconque au centre de la France, par exemple : \newline
+
+$$\lambda = 2.44^{\circ}, ~~~ \varphi = 47.00^{\circ}, ~~~ h = 0 $$ \newline
+
+\noindent Une conversion de $(\lambda, \varphi, h)$ en coordonnées cartésiennes ECEF nous donne : \newline
+
+
+\begin{center}
+\textbf{\texttt{X =  4353736.820 m, Y = 185520.548 m, Z = 4641764.789 m}} 
+\end{center}
+\vspace{0.5cm}
+
+
+\noindent Ouvrir le fichier d'éphémérides \texttt{igu22346\_12.sp3} et récupérer les coordonnées du satellite G25 : \newline
+
+\begin{center}
+\textbf{\texttt{X =  14943197.874 m, Y =  5402264.144 m, Z = 21026251.997 m}} 
+\end{center}
+\vspace{0.5cm}
+
+
+\noindent Il nous suffit alors de calculer la distance entre le point approximatif ci-dessus, et les coordonnées du satellite, modulo la période spatial du signal : $c/1~ms = 299.792$ km : \newline
+
+ \begin{center}
+\begin{tabular}{ l l }
+\texttt{P = [~\color{orange}4353736.820 ~185520.548 ~4641764.789\color{black}];}  & \texttt{\color{OliveGreen}\% Coordonnées point approché\color{black}} \\
+\texttt{S = [\color{orange}14943197.874 5402264.144 21026251.997\color{black}];}  & \texttt{\color{OliveGreen}\% Coordonnées satellite\color{black}} \\
+\texttt{N = \color{blue}floor\color{black}(\color{blue}norm\color{black}(P-S)/\color{orange}299792\color{black});}                   & \texttt{\color{OliveGreen}\% Ambiguité pour G25\color{black}} 
+\end{tabular}
+\end{center}
+\vspace{0.5cm} 
+
+\noindent On trouve alors $N = 67$, ce qui signifie que la valeur de décalage $dt$ trouvée à la question Q11, doit être corrigée de ce nombre entier de millisecondes, et on obtient la mesure de pseudo-distances entre le satellite G25 et le récepteur, corrigée de l'ambiguïté de code : \newline
+
+$$dt = 67 + 0.30225 = 67.30225~\mbox{ms}$$ \newline
+
+
+\noindent Appliquer la procédure ci-dessus pour déterminer les valeurs d'ambigüités pour tous les satellites en vue. \newline
+
+\noindent En pratique, les valeurs trouvées avec cette procédure ne prennent pas en compte l'erreur d'horloge du récepteur (jusqu'à 1 ms) et peuvent donc différer des valeurs vraies d'une unité. Les valeurs vraies des ambigüités sont données dans la sixième colonne du fichier d'éphémérides \texttt{igu22346\_12.sp3}. Vérifier que les valeurs trouvées avec la procédure simplifiée ci-dessus ne diffère pas de plus d'une unité des valeurs vraies. \newline 
+
+\noindent \textbf{Q15.} En utilisant les valeurs d'ambigüités données dans la dernière colonne du fichier d'éphémérides, calculer les pseudo-distances \textit{désambiguisées} de tous les satellites en vue à l'instant de la mesure. \newline \newline
+
+\noindent \large\textbf{IV. Résolution de la position}\normalsize \newline
+
+\noindent La résolution des équations de positionnement sortant du cadre de ce TP, nous allons ici simplement former les données nécessaires à la pose du système d'équations, et nous utiliserons l'application en ligne suivante pour résoudre automatiquement le problème : \newline
+
+\begin{center}
+\begin{tabular}{ c }
+ \hline
+Résolution du système d'équations GPS \\ 
+ \hline
+\url{https://raw.githack.com/ymeneroux/amf_wgs84/master/m2sam/appli/index.html}    \\
+ \hline
+\end{tabular}
+\end{center}
+\vspace{0.5cm}
+
+\noindent La travail consiste à présent à :\newline
+
+\begin{itemize}
+\item Corriger les mesures de pseudo-distances pour prendre en compte les erreurs d'horloge des satellites (directement disponibles dans ce même fichier d'éphémérides) \newline
+\item Passer les mesures de pseudo-distances corrigées et les positions satellites à l'instant de la mesure dans l'application ci-dessus pour estimer la position du récepteur. \newline
+\end{itemize}
+
+\noindent Ces deux étapes sont l'objet des deux questions qui suivent (Q16 à Q17). \newline
+
+\noindent \textbf{Q16.} Pour corriger les erreurs d'horloge des satellites, on utilise la valeur donnée (en $\mu$s) dans la cinquième colonne du fichier d'éphémérides \texttt{igu22346\_12.sp3}, que l'on ajoute au temps de trajet trouvé à la question Q15 pour chaque satellite. La valeur est alors convertie en pseudo-distance (en mètres) en multiplicant par la vitesse de la lumière dans le vide. \newline
+
+\noindent Appliquer cette procédure pour déterminer les pseudo-distances de tous les satellites en vue à l'instant de la réception. On s'assurera que le script est correct en vérifiant que le résultat obtenu pour le satellite G25 est proche de 19 993 737  m. \newline
+
+
+\noindent \textbf{Q17.} Utiliser l'application proposée en entête de partie IV pour calculer la position du récepteur. Calculer l'erreur 3D avec la référence donnée en début de l'énoncé de ce TP. \newline
+
+\noindent En substance, ce code permet de calculer par moindres carrés la position qui s'ajuste au mieux aux pseudo-distances mesurées entre les satellites et le récepteur à l'instant de l'observation. Formellement, nous avons 4 inconnues (les trois coordonnées d'espace du récepteur, plus une inconnue supplémentaire pour modéliser l'erreur de son horloge interne par rapport au temps du système GPS). Si nous disposons de $n \geqslant 4$ mesures de pseudo-distances vers des satellites de positions connues, le programme cherche la solution la plus juste\footnote{S'il y a strictement plus de 4 satellites en vue, formellement le problème est sur-contraint et n'a pas de solution ; la technique des moindres carrés permet de trouver un compromis optimal entre toutes les observations.} pour résoudre un système de $n$ équations à 4 inconnues. \newline
+
+
+\noindent \textbf{Q18.} En inspectant les résultats donnés par l'application (bouton \texttt{Détails}) calculer (en us) l'erreur de l'horloge du récepteur). Quelle est la précision de la détermination de cette erreur ? \newline
+
+\noindent \textbf{Q19.} Utiliser l'application ci-dessous pour exprimer le point en coordonnées géographiques et le représenter sous \textit{Google Maps}. 
+
+\begin{center}
+\begin{tabular}{ c }
+ \hline
+ Conversion de coordonnées \\ 
+ \hline
+ \url{https://tool-online.com/en/coordinate-converter.php} \\
+ \hline
+\end{tabular}
+\end{center}
+\vspace{0.5cm}
+
+\noindent Notons que la précision de positionnement est relativement médiocre. Celà est dû en grande partie au faible taux d'échantillonnage du signal RF reçu. Avec 2.048 Méga-échantillons par seconde, la résolution spatiale du code vue du récepteur est de l'ordre de 150 m. La mesure de corrélation ne peut donc guère descendre en dessous de cette précision. Remarquons cependant que d'autres sources d'erreur devraient également être prises en compte pour améliorer la qualité de positionnement : \newline
+
+\begin{itemize}
+\item Si les signaux sont observés simultanément au niveau de la réception, nécessairement, ils ont été émis à des instants différents. Chaque position de satellite devrait donc être interpolée avec des poids différent en fonction du temps de propagation des signaux (question Q15).\newline
+\item La traversée de la ionosphère et de la troposphère induit un retard de propagation (vitesse de la lumière réduite et trajectoire courbée) à prendre en compte (erreur de l'ordre de quelques dizaines de mètres).\newline
+\item Pendant le temps de propagation des signaux (70 ms en moyenne), la Terre tourne de 0.3 millièmes de degré, ce qui en particulier à la latitude de la France représente une erreur de 30 m vers l'Est.\newline
+\item Les effets relativistes combinés à la trajectoire elliptique des satellites induisent des variations dans les dérives d'horloge des satellites. \newline
+\end{itemize}
+
+\end{document}
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
