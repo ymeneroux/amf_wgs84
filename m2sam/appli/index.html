@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<html>
+
+<!------------------------------------------------>
+<!-- Chargement des functions js et du CSS      -->
+<!------------------------------------------------>
+<head>
+	
+	<!-- Matrix computations -->
+	<script type="text/javascript" src="sylvester.js"></script>
+	
+	<!-- Specific scripts -->
+	<script src="mainFunctions.js"></script>
+
+	<!-- Stylesheet -->
+	<link rel="stylesheet" type="text/css" href="button.css" />
+	
+		<style>
+            .sol_div
+            {
+                font-family:    Courier;
+                font-size:      20px;
+            }
+        </style>
+
+</head>
+
+
+<!------------------------------------------------>
+<!-- Corps de programme                         -->
+<!------------------------------------------------>
+ <!-- <body style="background-image:url('images/fujisan.jpg'); background-attachment:fixed; background-position:POSITION; background-repeat:REPEAT SETTINGS;"> -->
+
+<body>
+
+	<!-- Titre -->
+	<p style="text-align:center"><font size="10" face="Meiryo">GNSS Equations Solver</font></p>
+ 
+	<!-- Formuaire d'entrée : nombre de questions tests -->
+	<HR> 
+	<form id="frm1000" action="form_action.asp">
+	
+		Number of observations: &nbsp
+		<input id="spinner" type="number" size="3" name="fname" min="1" max="32" step="1" value="5" size="1">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+			
+	
+	<HR>
+	
+	   <div class="buttons">
+		<a href="#" class="button start" onclick="firstButton()">START</a>
+	   </div>
+	
+	</form> 
+	
+	</br> </br>
+		
+	<!-- INPUT -->	
+	<form id="frm"> </form>
+	
+	</br> </br>
+		
+		<!-- SOLUTIONS -->	
+	<div class="sol_div"><form id="sol"></form></div>	
+		
+	<!-- SOLUTIONS -->	
+	<div class="sol_div"><form id="details"></form></div>
+	
+	
+</body>
+
+
+</html>
