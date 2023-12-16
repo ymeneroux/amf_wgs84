@@ -2,6 +2,7 @@ import os
 import cv2
 import sys
 import numpy as np
+import scipy.signal
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
 
@@ -125,15 +126,19 @@ for f in sorted(os.listdir(input_path_images)):
 	os.mkdir(default_out_dir+"/vignets/"+f)
 	img_current = cv2.imread(input_path_images+"/"+f) 
 	#for i in range(len(POINTS_NAME)):
-	for i in range(1):
+	for i in range(7,8):
 		crop = img_current[LLY[i]:URY[i], LLX[i]:URX[i], :]
-		crop_us = upsample(crop, factor=10)[:,:,0]
+		crop_us = upsample(crop)[:,:,0]
 		cv2.imwrite(default_out_dir+"/vignets/"+f+"/"+POINTS_NAME[i]+".png", crop) 
-
+		corr = scipy.signal.fftconvolve(crop_us, VIGNETS[i][::-1,::-1])
+		corr = np.power(corr, 5); corr = corr/np.max(corr)*255
+		print(np.unravel_index(np.argmax(corr), corr.shape))
+		plt.imshow(corr, cmap='gray')
+		plt.show()
+	break        
 
 print("----------------------------------------------------------------")
-plt.imshow(VIGNETS[0], cmap='gray')
-plt.show()
-
+#plt.imshow(VIGNETS[0], cmap='gray')
+#plt.show()
 
 
