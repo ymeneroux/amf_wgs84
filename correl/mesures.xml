@@ -10,7 +10,7 @@
           <OneMesureAF1I>
                <NamePt>02</NamePt>
                <PtIm>1599.96819307431338 1680.54890408893107</PtIm>
-               <BlockSize>30</BlockSize>
+               <BlockSize>50</BlockSize>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>03</NamePt>
@@ -29,7 +29,7 @@
           <OneMesureAF1I>
                <NamePt>06</NamePt>
                <PtIm>3517.46132526752262 1637.66120664742107</PtIm>
-               <BlockSize>20</BlockSize>
+               <BlockSize>50</BlockSize>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>07</NamePt>
@@ -39,7 +39,7 @@
           <OneMesureAF1I>
                <NamePt>08</NamePt>
                <PtIm>3270.38940451476174 2927.59202459047265</PtIm>
-                <BlockSize>300</BlockSize>
+                <BlockSize>200</BlockSize>
           </OneMesureAF1I>
      </MesureAppuiFlottant1Im>
 </SetOfMesureAppuisFlottants>

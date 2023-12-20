@@ -39,6 +39,7 @@ if (os.path.isdir(default_out_dir)):
 else:
 	os.mkdir(default_out_dir)
 	os.mkdir(default_out_dir+"/vignets")
+	os.mkdir(default_out_dir+"/vignets/master")
 
 POINTS_NAME     = []
 POINTS_X        = []
@@ -114,11 +115,17 @@ for i in range(len(POINTS_NAME)):
 
 	crop = img_init_original[LLY[-1]:URY[-1], LLX[-1]:URX[-1], :]
 	VIGNETS.append(upsample(crop)[:,:,0])
-	cv2.imwrite(default_out_dir+"/vignets/"+POINTS_NAME[i]+".png", crop) 
+	cv2.imwrite(default_out_dir+"/vignets/master/"+POINTS_NAME[i]+".png", crop) 
 
 cv2.imwrite(default_out_dir+"/initImgWithVignets.png", img_init)
 
-
+# -----------------------------------------------------------------
+# Creation repertoire vignettes
+# -----------------------------------------------------------------
+for name in POINTS_NAME:
+	path_dir_vignette = default_out_dir + "/vignets/" + name
+	if not (os.path.isdir(path_dir_vignette)):
+		os.mkdir(path_dir_vignette)
 
 # -----------------------------------------------------------------
 # Correlation par image
@@ -132,18 +139,31 @@ for f in sorted(os.listdir(input_path_images)):
 	#print("----------------------------------------------------------------")
 	print(f, "-> Image "+'{:04d}'.format(counter))
 	#print("----------------------------------------------------------------")
-	if not (os.path.isdir(default_out_dir+"/vignets/"+f)):
-		os.mkdir(default_out_dir+"/vignets/"+f)
 	img_current = cv2.imread(input_path_images+"/"+f) 
 	for i in range(len(POINTS_NAME)):
+	#for i in range(7,8):
 		crop = img_current[LLY[i]:URY[i], LLX[i]:URX[i], :]
+		center = ((URX[i]-LLX[i])/2.0, (URY[i]-LLY[i])/2.0)
 		crop_us = upsample(crop)[:,:,0]
-		cv2.imwrite(default_out_dir+"/vignets/"+f+"/"+POINTS_NAME[i]+".png", crop) 
-		corr = scipy.signal.fftconvolve(crop_us, VIGNETS[i][::-1,::-1])
+		corr = scipy.signal.fftconvolve(crop_us, VIGNETS[i][::-1,::-1], mode='same')
 		corr = np.power(corr, 5); corr = corr/np.max(corr)*255
-		print("["+POINTS_NAME[i]+"]", np.unravel_index(np.argmax(corr), corr.shape))
+		pos_max = np.unravel_index(np.argmax(corr), corr.shape)
+		dx = pos_max[0]/10.0 - center[0]
+		dy = pos_max[1]/10.0 - center[1]
+		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy))
+	
+		crop_us_output = upsample(crop)
+		ll = (10*(int)(center[0]+dy-3), 10*(int)(center[1]+dx-3))
+		ur = (10*(int)(center[0]+dy+3), 10*(int)(center[1]+dx+3))
+		cv2.rectangle(crop_us_output, ll, ur, (0, 0, 255), 2)
+		ll = (10*(int)(center[0]+dy)-1, 10*(int)(center[1]+dx)-1)
+		ur = (10*(int)(center[0]+dy)+1, 10*(int)(center[1]+dx)+1)
+		cv2.rectangle(crop_us_output, ll, ur, (0, 0, 255), 2)
+		cv2.imwrite(default_out_dir + "/vignets/" + POINTS_NAME[i] + "/" + f.split('.')[0] + "_" + POINTS_NAME[i] + ".png", crop_us_output) 
+		
 		#plt.imshow(corr, cmap='gray')
-		#plt.show()   
+		#plt.show()  
+		
 print("----------------------------------------------------------------")
 #plt.imshow(VIGNETS[0], cmap='gray')
 #plt.show()
