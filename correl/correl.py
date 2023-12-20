@@ -28,8 +28,17 @@ if (len(sys.argv) > 3):
 if (len(sys.argv) > 4):
 	default_out_dir = (sys.argv[4])
 
-os.mkdir(default_out_dir)
-os.mkdir(default_out_dir+"/vignets")
+if (os.path.isdir(default_out_dir)):
+	answer=""
+	while not ((answer=="y") or (answer=="n")):
+		answer = input("Directory ["+default_out_dir+"] already exists. Continue? [y/n]  ")
+		if (answer=="y"):
+			break
+		else:
+			sys.exit()
+else:
+	os.mkdir(default_out_dir)
+	os.mkdir(default_out_dir+"/vignets")
 
 POINTS_NAME     = []
 POINTS_X        = []
@@ -123,20 +132,18 @@ for f in sorted(os.listdir(input_path_images)):
 	#print("----------------------------------------------------------------")
 	print(f, "-> Image "+'{:04d}'.format(counter))
 	#print("----------------------------------------------------------------")
-	os.mkdir(default_out_dir+"/vignets/"+f)
+	if not (os.path.isdir(default_out_dir+"/vignets/"+f)):
+		os.mkdir(default_out_dir+"/vignets/"+f)
 	img_current = cv2.imread(input_path_images+"/"+f) 
-	#for i in range(len(POINTS_NAME)):
-	for i in range(7,8):
+	for i in range(len(POINTS_NAME)):
 		crop = img_current[LLY[i]:URY[i], LLX[i]:URX[i], :]
 		crop_us = upsample(crop)[:,:,0]
 		cv2.imwrite(default_out_dir+"/vignets/"+f+"/"+POINTS_NAME[i]+".png", crop) 
 		corr = scipy.signal.fftconvolve(crop_us, VIGNETS[i][::-1,::-1])
 		corr = np.power(corr, 5); corr = corr/np.max(corr)*255
-		print(np.unravel_index(np.argmax(corr), corr.shape))
-		plt.imshow(corr, cmap='gray')
-		plt.show()
-	break        
-
+		print("["+POINTS_NAME[i]+"]", np.unravel_index(np.argmax(corr), corr.shape))
+		#plt.imshow(corr, cmap='gray')
+		#plt.show()   
 print("----------------------------------------------------------------")
 #plt.imshow(VIGNETS[0], cmap='gray')
 #plt.show()
