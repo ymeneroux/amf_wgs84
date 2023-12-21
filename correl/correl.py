@@ -23,6 +23,9 @@ default_block_size = 100         # Valeur par defaut fenetre correlation
 default_out_dir = "Out_correl"   # Repertoire de sortie par defaut
 # ------------------------------------------------------------------------
 
+
+frsz = 10
+
 if (len(sys.argv) > 3):
 	factor_window = (float)(sys.argv[3]) 
 if (len(sys.argv) > 4):
@@ -30,6 +33,7 @@ if (len(sys.argv) > 4):
 
 if (os.path.isdir(default_out_dir)):
 	answer=""
+	answer = "y"  # !!!!!!!
 	while not ((answer=="y") or (answer=="n")):
 		answer = input("Directory ["+default_out_dir+"] already exists. Continue? [y/n]  ")
 		if (answer=="y"):
@@ -50,8 +54,8 @@ BLOCK_SIZE_DEF  = []
 # -----------------------------------------------------------------
 # Fonctions utilitaires
 # -----------------------------------------------------------------
-def upsample(image, factor=10, method=cv2.INTER_LINEAR):
-	return cv2.resize(image, (factor*image.shape[0], factor*image.shape[1]), method)
+def upsample(image, factor=frsz, method=cv2.INTER_LINEAR):
+	return cv2.resize(image, (factor*image.shape[0], factor*image.shape[1]), interpolation=method)
 
 # -----------------------------------------------------------------
 # Lecture des coordonnees de l'image initiale
@@ -141,28 +145,32 @@ for f in sorted(os.listdir(input_path_images)):
 	#print("----------------------------------------------------------------")
 	img_current = cv2.imread(input_path_images+"/"+f) 
 	for i in range(len(POINTS_NAME)):
-	#for i in range(7,8):
+	#for i in range(1,2):
 		crop = img_current[LLY[i]:URY[i], LLX[i]:URX[i], :]
-		center = ((URX[i]-LLX[i])/2.0, (URY[i]-LLY[i])/2.0)
+		center_init = ((URX[i]-LLX[i])/2.0, (URY[i]-LLY[i])/2.0)
 		crop_us = upsample(crop)[:,:,0]
 		corr = scipy.signal.fftconvolve(crop_us, VIGNETS[i][::-1,::-1], mode='same')
 		corr = np.power(corr, 5); corr = corr/np.max(corr)*255
 		pos_max = np.unravel_index(np.argmax(corr), corr.shape)
-		dx = pos_max[0]/10.0 - center[0]
-		dy = pos_max[1]/10.0 - center[1]
+		
+		dx = pos_max[0]/frsz - center_init[0]
+		dy = pos_max[1]/frsz - center_init[1]
+		
 		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy))
-	
-		crop_us_output = upsample(crop)
-		ll = (10*(int)(center[0]+dy-3), 10*(int)(center[1]+dx-3))
-		ur = (10*(int)(center[0]+dy+3), 10*(int)(center[1]+dx+3))
-		cv2.rectangle(crop_us_output, ll, ur, (0, 0, 255), 2)
-		ll = (10*(int)(center[0]+dy)-1, 10*(int)(center[1]+dx)-1)
-		ur = (10*(int)(center[0]+dy)+1, 10*(int)(center[1]+dx)+1)
-		cv2.rectangle(crop_us_output, ll, ur, (0, 0, 255), 2)
-		cv2.imwrite(default_out_dir + "/vignets/" + POINTS_NAME[i] + "/" + f.split('.')[0] + "_" + POINTS_NAME[i] + ".png", crop_us_output) 
+		
+		crop_us_output = upsample(crop, method=cv2.INTER_NEAREST)
+			
+		center = (center_init[0]+dy, center_init[1]+dx)
+		
+		cv2.circle(crop_us_output, (int(frsz*center[0])+5, int(frsz*center[1])+5), frsz, (0,0,255), 2)
+		 
+		out_file = default_out_dir+"/vignets/"+POINTS_NAME[i]+"/"+f.split('.')[0]+"_"+POINTS_NAME[i]+".png"
+
+		cv2.imwrite(out_file, crop_us_output) 
 		
 		#plt.imshow(corr, cmap='gray')
-		#plt.show()  
+		#plt.show() 
+	#break 
 		
 print("----------------------------------------------------------------")
 #plt.imshow(VIGNETS[0], cmap='gray')

@@ -1,45 +1,38 @@
 <?xml version="1.0" ?>
 <SetOfMesureAppuisFlottants>
      <MesureAppuiFlottant1Im>
-          <NameIm>IGN2_202311281603-00-cam-22348130-0.jpg</NameIm>
+          <NameIm>IGN2_202311281603-00-cam-22348130-0000.jpg</NameIm>
           <OneMesureAF1I>
                <NamePt>01</NamePt>
-               <PtIm>588.859862042507757 1689.2240251410426</PtIm>
-               <BlockSize>50</BlockSize>
+               <PtIm>589.452824650959883 1689.37043429840492</PtIm>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>02</NamePt>
-               <PtIm>1599.96819307431338 1680.54890408893107</PtIm>
-               <BlockSize>50</BlockSize>
+               <PtIm>1599.88320421386766 1680.69381278491414</PtIm>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>03</NamePt>
-               <PtIm>2533.0602789203117 1650.07365226736511</PtIm>
+               <PtIm>2532.56638062870752 1650.04019998778722</PtIm>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>04</NamePt>
-               <PtIm>2607.40207440089853 1650.25840273810786</PtIm>
-               <BlockSize>60</BlockSize>
+               <PtIm>2607.43411958853449 1650.5219509899764</PtIm>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>05</NamePt>
-               <BlockSize>70</BlockSize>
-               <PtIm>3383.82849206359606 1604.18305437844674</PtIm>
+               <PtIm>3383.6737596779767 1604.68986004356429</PtIm>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>06</NamePt>
-               <PtIm>3517.46132526752262 1637.66120664742107</PtIm>
-               <BlockSize>50</BlockSize>
+               <PtIm>3517.51327925087844 1637.66840061961443</PtIm>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>07</NamePt>
-               <PtIm>5276.49193578834729 1579.62289906506999</PtIm>
-               <BlockSize>100</BlockSize>
+               <PtIm>5275.99428876375077 1579.87607920193136</PtIm>
           </OneMesureAF1I>
           <OneMesureAF1I>
                <NamePt>08</NamePt>
-               <PtIm>3270.38940451476174 2927.59202459047265</PtIm>
-                <BlockSize>200</BlockSize>
+               <PtIm>3270.4965845897791 2927.57013988909421</PtIm>
           </OneMesureAF1I>
      </MesureAppuiFlottant1Im>
 </SetOfMesureAppuisFlottants>
