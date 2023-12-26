@@ -24,7 +24,7 @@ default_out_dir = "Out_correl"   # Repertoire de sortie par defaut
 # ------------------------------------------------------------------------
 
 
-frsz = 10
+frsz = 40
 
 if (len(sys.argv) > 3):
 	factor_window = (float)(sys.argv[3]) 
@@ -54,8 +54,15 @@ BLOCK_SIZE_DEF  = []
 # -----------------------------------------------------------------
 # Fonctions utilitaires
 # -----------------------------------------------------------------
-def upsample(image, factor=frsz, method=cv2.INTER_LINEAR):
+def upsample(image, factor=10, method=cv2.INTER_CUBIC):
 	return cv2.resize(image, (factor*image.shape[0], factor*image.shape[1]), interpolation=method)
+	
+	
+def phaseCorrelation(image, vignette):
+	corr = scipy.signal.fftconvolve(image, vignette[::-1,::-1], mode='valid')	
+	pos_max = np.unravel_index(np.argmax(corr), corr.shape)
+	return [pos_max[1], pos_max[0], np.max(corr)] 
+
 
 # -----------------------------------------------------------------
 # Lecture des coordonnees de l'image initiale
@@ -118,7 +125,7 @@ for i in range(len(POINTS_NAME)):
 	cv2.rectangle(img_init, (LLX[-1], LLY[-1]), (URX[-1],URY[-1]), color , 2) 
 
 	crop = img_init_original[LLY[-1]:URY[-1], LLX[-1]:URX[-1], :]
-	VIGNETS.append(upsample(crop)[:,:,0])
+	VIGNETS.append(upsample(crop, factor=frsz)[:,:,0])
 	cv2.imwrite(default_out_dir+"/vignets/master/"+POINTS_NAME[i]+".png", crop) 
 
 cv2.imwrite(default_out_dir+"/initImgWithVignets.png", img_init)
@@ -137,12 +144,12 @@ for name in POINTS_NAME:
 counter = 0;
 print("----------------------------------------------------------------")
 for f in sorted(os.listdir(input_path_images)):
-	#if (f == name_image_init):
-	#	continue
+	if (f == name_image_init):
+		continue
 	counter += 1
-	#print("----------------------------------------------------------------")
+	print("----------------------------------------------------------------")
 	print(f, "-> Image "+'{:04d}'.format(counter))
-	#print("----------------------------------------------------------------")
+	print("----------------------------------------------------------------")
 	img_current = cv2.imread(input_path_images+"/"+f) 
 	
 	
@@ -156,56 +163,35 @@ for f in sorted(os.listdir(input_path_images)):
 	file_xml.write("        <NameIm>" + f + "</NameIm>\n")
 
 	
-	for i in range(len(POINTS_NAME)):
-	#for i in range(7,8):
+	#for i in range(len(POINTS_NAME)):
+	for i in range(7,8):
 		crop = img_current[LLY[i]-20:URY[i]+20, LLX[i]-20:URX[i]+20, :]
+		crop_us = upsample(crop, factor=frsz)[:,:,0]
+		CORREL = phaseCorrelation(crop_us, VIGNETS[i])
+				
+		dx  = CORREL[0]/frsz-20
+		dy  = CORREL[1]/frsz-20
+	
+		center = (POINTS_X[i] + dx, POINTS_Y[i] + dy)
 		
-		center_init = ((URX[i]-LLX[i])/2.0, (URY[i]-LLY[i])/2.0)
-		crop_us = upsample(crop)[:,:,0]
-		corr = scipy.signal.fftconvolve(crop_us, VIGNETS[i][::-1,::-1], mode='valid')
-		
-		corr = np.power(corr, 5); corr = corr/np.max(corr)*255
-		pos_max = np.unravel_index(np.argmax(corr), corr.shape)
-		
-		dx = pos_max[0]/frsz - center_init[0]
-		dy = pos_max[1]/frsz - center_init[1]
-		
+		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy), "   ", '{:7.3f}'.format(center[0]), '{:7.3f}'.format(center[1]))
+
+		# -----------------------------------------------------------------
+		# Graphical output
+		# -----------------------------------------------------------------
+		center_vignet = ((URY[i]-LLY[i])/2.0 + dx + 20, (URX[i]-LLX[i])/2.0 + dy + 20)
+		crop_us_output = upsample(crop, factor=10, method=cv2.INTER_NEAREST)
+		cv2.circle(crop_us_output, (int(10*center_vignet[0]), int(10*center_vignet[1])), 10, (0,0,255), 2)		
+		out_file = default_out_dir+"/vignets/"+POINTS_NAME[i]+"/"+f.split('.')[0]+"_"+POINTS_NAME[i]+".png"
+		cv2.imwrite(out_file, crop_us_output) 
+		# -----------------------------------------------------------------
+				
 		
 		file_xml.write("        <OneMesureAF1I>\n")
 		file_xml.write("            <NamePt>" + POINTS_NAME[i] + "</NamePt>\n")
-		file_xml.write("            <PtIm>" + str(0.0) + " " + str(0.0) + "</PtIm>\n")
+		file_xml.write("            <PtIm>" + str(center[0]) + " " + str(center[1]) + "</PtIm>\n")
 		file_xml.write("        </OneMesureAF1I>\n")
-
-		#plt.imshow(crop_us, cmap='gray')
-		#plt.show() 
 		
-	
-		#plt.imshow(VIGNETS[i][::-1,::-1],  cmap='gray')
-		#plt.show() 
-		
-		
-		#print(VIGNETS[i].shape, crop_us.shape, pos_max)
-		
-		
-		
-		
-		
-		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy))
-		
-		crop_us_output = upsample(crop, method=cv2.INTER_NEAREST)
-			
-		center = (center_init[0]+dy+51, center_init[1]+dx+49.5)
-		
-		cv2.circle(crop_us_output, (int(frsz*center[0])+5, int(frsz*center[1])+5), frsz, (0,0,255), 2)
-		 
-		out_file = default_out_dir+"/vignets/"+POINTS_NAME[i]+"/"+f.split('.')[0]+"_"+POINTS_NAME[i]+".png"
-		cv2.imwrite(out_file, crop_us_output) 
-
-
-
-		
-		#plt.imshow(corr, cmap='gray')
-		#plt.show()
 		
 	file_xml.write("    </MesureAppuiFlottant1Im>\n")
 	file_xml.write("</SetOfMesureAppuisFlottants>\n")

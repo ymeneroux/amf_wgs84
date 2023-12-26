@@ -24,8 +24,6 @@ default_out_dir = "Out_correl"   # Repertoire de sortie par defaut
 # ------------------------------------------------------------------------
 
 
-frsz = 1
-
 if (len(sys.argv) > 3):
 	factor_window = (float)(sys.argv[3]) 
 if (len(sys.argv) > 4):
@@ -54,7 +52,7 @@ BLOCK_SIZE_DEF  = []
 # -----------------------------------------------------------------
 # Fonctions utilitaires
 # -----------------------------------------------------------------
-def upsample(image, factor=frsz, method=cv2.INTER_CUBIC):
+def upsample(image, factor=10, method=cv2.INTER_CUBIC):
 	return cv2.resize(image, (factor*image.shape[0], factor*image.shape[1]), interpolation=method)
 
 # -----------------------------------------------------------------
@@ -118,7 +116,7 @@ for i in range(len(POINTS_NAME)):
 	cv2.rectangle(img_init, (LLX[-1], LLY[-1]), (URX[-1],URY[-1]), color , 2) 
 
 	crop = img_init_original[LLY[-1]:URY[-1], LLX[-1]:URX[-1], :]
-	VIGNETS.append(upsample(crop[:,:,0]))
+	VIGNETS.append(crop[:,:,0])
 	cv2.imwrite(default_out_dir+"/vignets/master/"+POINTS_NAME[i]+".png", crop) 
 
 cv2.imwrite(default_out_dir+"/initImgWithVignets.png", img_init)
@@ -137,12 +135,12 @@ for name in POINTS_NAME:
 counter = 0;
 print("----------------------------------------------------------------")
 for f in sorted(os.listdir(input_path_images)):
-	#if (f == name_image_init):
-		#continue
+	if (f == name_image_init):
+		continue
 	counter += 1
-	#print("----------------------------------------------------------------")
+	print("----------------------------------------------------------------")
 	print(f, "-> Image "+'{:04d}'.format(counter))
-	#print("----------------------------------------------------------------")
+	print("----------------------------------------------------------------")
 	img_current = cv2.imread(input_path_images+"/"+f) 
 	
 	
@@ -159,14 +157,14 @@ for f in sorted(os.listdir(input_path_images)):
 	for i in range(len(POINTS_NAME)):
 	#for i in range(1,2):
 	
-		crop = upsample(img_current[LLY[i]:URY[i], LLX[i]:URX[i], 0])
+		crop = img_current[LLY[i]:URY[i], LLX[i]:URX[i], 0]
 		shift = cv2.phaseCorrelate(np.float32(VIGNETS[i]), np.float32(crop))	
 
 		dx = shift[0][0]
 		dy = shift[0][1]
 		
-		new_coord_x = (LLY[i]+URY[i])/2.0 + dx/frsz
-		new_coord_y = (LLX[i]+URX[i])/2.0 + dy/frsz
+		new_coord_x = (LLY[i]+URY[i])/2.0 + dx
+		new_coord_y = (LLX[i]+URX[i])/2.0 + dy
 		
 		file_xml.write("        <OneMesureAF1I>\n")
 		file_xml.write("            <NamePt>" + POINTS_NAME[i] + "</NamePt>\n")
@@ -174,15 +172,14 @@ for f in sorted(os.listdir(input_path_images)):
 		file_xml.write("        </OneMesureAF1I>\n")
 
 		
-		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx/frsz), '{:7.3f}'.format(dy/frsz), '{:7.3f}'.format(shift[1]))
+		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy), '{:7.3f}'.format(shift[1]))
 		
-		crop_us_output = upsample(img_current[LLY[i]:URY[i], LLX[i]:URX[i], :], factor=10, method=cv2.INTER_NEAREST)
-		center = ((URY[i]-LLY[i])/2.0 + dx/frsz, (URX[i]-LLX[i])/2.0 + dy/frsz)
+		crop_us_output = upsample(img_current[LLY[i]:URY[i], LLX[i]:URX[i], :], method=cv2.INTER_NEAREST)
+		center = ((URY[i]-LLY[i])/2.0 + dx, (URX[i]-LLX[i])/2.0 + dy)
 		cv2.circle(crop_us_output, (int(10*center[0]), int(10*center[1])), 10, (0,0,255), 2)
 		out_file = default_out_dir+"/vignets/"+POINTS_NAME[i]+"/"+f.split('.')[0]+"_"+POINTS_NAME[i]+".png"
 		cv2.imwrite(out_file, crop_us_output)
 
-		
 		
 	file_xml.write("    </MesureAppuiFlottant1Im>\n")
 	file_xml.write("</SetOfMesureAppuisFlottants>\n")
