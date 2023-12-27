@@ -24,7 +24,7 @@ default_out_dir = "Out_correl"   # Repertoire de sortie par defaut
 # ------------------------------------------------------------------------
 
 
-frsz = 5
+frsz = 10
 margin = 20
 
 if (len(sys.argv) > 3):
