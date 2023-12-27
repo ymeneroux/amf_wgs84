@@ -24,7 +24,8 @@ default_out_dir = "Out_correl"   # Repertoire de sortie par defaut
 # ------------------------------------------------------------------------
 
 
-frsz = 40
+frsz = 5
+margin = 20
 
 if (len(sys.argv) > 3):
 	factor_window = (float)(sys.argv[3]) 
@@ -138,6 +139,29 @@ for name in POINTS_NAME:
 	if not (os.path.isdir(path_dir_vignette)):
 		os.mkdir(path_dir_vignette)
 
+
+# -----------------------------------------------------------------
+# Stockage des valeurs de référence
+# -----------------------------------------------------------------
+REF_X = []
+REF_Y = []
+print("----------------------------------------------------------------")
+print("Computing reference shifts...")
+print("----------------------------------------------------------------")
+for i in range(len(POINTS_NAME)):
+	img_current = cv2.imread(input_path_images + "/" + name_image_init) 
+	crop = img_current[LLY[i]-margin:URY[i]+margin, LLX[i]-margin:URX[i]+margin, :]
+	crop_us = upsample(crop, factor=frsz)[:,:,0]
+	CORREL = phaseCorrelation(crop_us, VIGNETS[i])
+	dx  = CORREL[0]/frsz-margin
+	dy  = CORREL[1]/frsz-margin
+	REF_X.append(dx)
+	REF_Y.append(dy)
+	print("REF FOR ["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy))
+	
+
+
+
 # -----------------------------------------------------------------
 # Correlation par image
 # -----------------------------------------------------------------
@@ -163,14 +187,14 @@ for f in sorted(os.listdir(input_path_images)):
 	file_xml.write("        <NameIm>" + f + "</NameIm>\n")
 
 	
-	#for i in range(len(POINTS_NAME)):
-	for i in range(7,8):
-		crop = img_current[LLY[i]-20:URY[i]+20, LLX[i]-20:URX[i]+20, :]
+	for i in range(len(POINTS_NAME)):
+	#for i in range(7,8):
+		crop = img_current[LLY[i]-margin:URY[i]+margin, LLX[i]-margin:URX[i]+margin, :]
 		crop_us = upsample(crop, factor=frsz)[:,:,0]
 		CORREL = phaseCorrelation(crop_us, VIGNETS[i])
 				
-		dx  = CORREL[0]/frsz-20
-		dy  = CORREL[1]/frsz-20
+		dx  = CORREL[0]/frsz-margin - REF_X[i]
+		dy  = CORREL[1]/frsz-margin - REF_Y[i]
 	
 		center = (POINTS_X[i] + dx, POINTS_Y[i] + dy)
 		
@@ -179,7 +203,7 @@ for f in sorted(os.listdir(input_path_images)):
 		# -----------------------------------------------------------------
 		# Graphical output
 		# -----------------------------------------------------------------
-		center_vignet = ((URY[i]-LLY[i])/2.0 + dx + 20, (URX[i]-LLX[i])/2.0 + dy + 20)
+		center_vignet = ((URY[i]-LLY[i])/2.0 + dx + margin, (URX[i]-LLX[i])/2.0 + dy + margin)
 		crop_us_output = upsample(crop, factor=10, method=cv2.INTER_NEAREST)
 		cv2.circle(crop_us_output, (int(10*center_vignet[0]), int(10*center_vignet[1])), 10, (0,0,255), 2)		
 		out_file = default_out_dir+"/vignets/"+POINTS_NAME[i]+"/"+f.split('.')[0]+"_"+POINTS_NAME[i]+".png"

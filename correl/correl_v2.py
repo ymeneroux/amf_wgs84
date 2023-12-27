@@ -155,7 +155,7 @@ for f in sorted(os.listdir(input_path_images)):
 
 	
 	for i in range(len(POINTS_NAME)):
-	#for i in range(1,2):
+	#for i in range(7,8):
 	
 		crop = img_current[LLY[i]:URY[i], LLX[i]:URX[i], 0]
 		shift = cv2.phaseCorrelate(np.float32(VIGNETS[i]), np.float32(crop))	
@@ -163,8 +163,8 @@ for f in sorted(os.listdir(input_path_images)):
 		dx = shift[0][0]
 		dy = shift[0][1]
 		
-		new_coord_x = (LLY[i]+URY[i])/2.0 + dx
-		new_coord_y = (LLX[i]+URX[i])/2.0 + dy
+		new_coord_x = (LLY[i]+URY[i])/2.0 + dy
+		new_coord_y = (LLX[i]+URX[i])/2.0 + dx
 		
 		file_xml.write("        <OneMesureAF1I>\n")
 		file_xml.write("            <NamePt>" + POINTS_NAME[i] + "</NamePt>\n")
@@ -172,7 +172,7 @@ for f in sorted(os.listdir(input_path_images)):
 		file_xml.write("        </OneMesureAF1I>\n")
 
 		
-		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy), '{:7.3f}'.format(shift[1]))
+		print("["+POINTS_NAME[i]+"]", '{:7.3f}'.format(dx), '{:7.3f}'.format(dy), '{:7.3f}'.format(shift[1]), "  ", '{:7.3f}'.format(new_coord_y), '{:7.3f}'.format(new_coord_x))
 		
 		crop_us_output = upsample(img_current[LLY[i]:URY[i], LLX[i]:URX[i], :], method=cv2.INTER_NEAREST)
 		center = ((URY[i]-LLY[i])/2.0 + dx, (URX[i]-LLX[i])/2.0 + dy)
