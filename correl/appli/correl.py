@@ -184,8 +184,8 @@ for i in range(len(POINTS_NAME)):
 counter = 0;
 print("----------------------------------------------------------------")
 for f in sorted(os.listdir(input_path_images)):
-	if (f == name_image_init):
-		continue
+	#if (f == name_image_init):
+	#	continue
 	counter += 1
 	print("----------------------------------------------------------------")
 	print(f, "-> Image "+'{:04d}'.format(counter))
