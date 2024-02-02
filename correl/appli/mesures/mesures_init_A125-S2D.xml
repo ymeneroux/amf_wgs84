@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<SetOfMesureAppuisFlottants>
+     <MesureAppuiFlottant1Im>
+          <NameIm>IGN2_202401301531-00-cam-22348125-471-60630253763551-470.jpg</NameIm>
+          <OneMesureAF1I>
+               <NamePt>CP1</NamePt>
+               <PtIm>248.518139719090641 1118.03757826737069</PtIm>
+          </OneMesureAF1I>
+          <OneMesureAF1I>
+               <NamePt>CP2</NamePt>
+               <PtIm>2992.4141026569414 1184.01355074673074</PtIm>
+          </OneMesureAF1I>
+          <OneMesureAF1I>
+               <NamePt>CP3</NamePt>
+               <PtIm>1574.24914803609863 1360.98989203302744</PtIm>
+          </OneMesureAF1I>
+          <OneMesureAF1I>
+               <NamePt>CP4</NamePt>
+               <PtIm>394.492436196057781 1375.12155653274749</PtIm>
+          </OneMesureAF1I>
+     </MesureAppuiFlottant1Im>
+</SetOfMesureAppuisFlottants>
