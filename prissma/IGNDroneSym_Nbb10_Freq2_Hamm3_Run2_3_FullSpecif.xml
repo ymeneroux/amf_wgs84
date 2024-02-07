@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="ISO8859-1" standalone="yes" ?>
+<Root>
+   <Type>"MMVII_Serialization"</Type>
+   <Version>"0:0.0"</Version>
+   <Data>
+      <FullSpecifTarget>
+         <BitEncoding>
+            <Specifs>
+               <Type>"IGNDroneSym"</Type>
+               <NbBits>10</NbBits>
+               <FreqCircEq>2</FreqCircEq>
+               <MinHammingD>3</MinHammingD>
+               <UseHammingCode>0</UseHammingCode>
+               <MaxRunL>2 3</MaxRunL>
+               <Parity>3</Parity>
+               <MaxNb>1000</MaxNb>
+               <Base4N>10</Base4N>
+               <Computed>
+                  <Prefix>"IGNDroneSym_Nbb10_Freq2_Hamm3_Run2_3"</Prefix>
+                  <NbDigit>2</NbDigit>
+                  <MaxNum>14</MaxNum>
+                  <MaxLowCode>697</MaxLowCode>
+                  <MaxCodeEqui>946</MaxCodeEqui>
+               </Computed>
+            </Specifs>
+            <Encoding>
+               <el>
+                  <NumCode>0 147</NumCode>
+                  <Name>"00"</Name>
+               </el>
+               <el>
+                  <NumCode>1 157</NumCode>
+                  <Name>"01"</Name>
+               </el>
+               <el>
+                  <NumCode>2 165</NumCode>
+                  <Name>"02"</Name>
+               </el>
+               <el>
+                  <NumCode>3 235</NumCode>
+                  <Name>"03"</Name>
+               </el>
+               <el>
+                  <NumCode>4 297</NumCode>
+                  <Name>"04"</Name>
+               </el>
+               <el>
+                  <NumCode>5 310</NumCode>
+                  <Name>"05"</Name>
+               </el>
+               <el>
+                  <NumCode>6 331</NumCode>
+                  <Name>"06"</Name>
+               </el>
+               <el>
+                  <NumCode>7 341</NumCode>
+                  <Name>"07"</Name>
+               </el>
+               <el>
+                  <NumCode>8 410</NumCode>
+                  <Name>"08"</Name>
+               </el>
+               <el>
+                  <NumCode>9 462</NumCode>
+                  <Name>"09"</Name>
+               </el>
+               <el>
+                  <NumCode>10 473</NumCode>
+                  <Name>"10"</Name>
+               </el>
+               <el>
+                  <NumCode>11 594</NumCode>
+                  <Name>"11"</Name>
+               </el>
+               <el>
+                  <NumCode>12 605</NumCode>
+                  <Name>"12"</Name>
+               </el>
+               <el>
+                  <NumCode>13 660</NumCode>
+                  <Name>"13"</Name>
+               </el>
+               <el>
+                  <NumCode>14 697</NumCode>
+                  <Name>"14"</Name>
+               </el>
+            </Encoding>
+         </BitEncoding>
+         <GeometryCodedTarget>
+            <Type>"IGNDroneSym"</Type>
+            <NbBits>10</NbBits>
+            <CenterF>299.5 423.5</CenterF>
+            <CornEl1>560.369565217391369 423.5</CornEl1>
+            <CornEl2>299.5 684.369565217391369</CornEl2>
+            <SzCCB>1</SzCCB>
+            <ThickN_WhiteInt>0.1</ThickN_WhiteInt>
+            <ThickN_Code>0</ThickN_Code>
+            <ThickN_WhiteExt>0</ThickN_WhiteExt>
+            <ThickN_BorderExt>0.05</ThickN_BorderExt>
+            <ThickN_Car>0.3</ThickN_Car>
+            <ChessBoardAngle>0</ChessBoardAngle>
+            <ModeFlight>1</ModeFlight>
+            <CBAtTop>0</CBAtTop>
+            <WithChessBoard>1</WithChessBoard>
+            <WhiteBackGround>1</WhiteBackGround>
+            <ZeroIsBackGround>1</ZeroIsBackGround>
+            <AntiClockWiseBit,>1</AntiClockWiseBit,>
+            <RayOrientTablet>0</RayOrientTablet>
+            <CenterOrientTablet>0.7 0</CenterOrientTablet>
+            <RayCenterMiniTarget>-1</RayCenterMiniTarget>
+         </GeometryCodedTarget>
+         <Centers>
+            <el>59.666666666666664 61.666666666666664</el>
+            <el>179.5 61.666666666666664</el>
+            <el>299.5 61.666666666666664</el>
+            <el>419.5 61.666666666666664</el>
+            <el>539.666666666666629 61.666666666666664</el>
+            <el>539.666666666666629 785.666666666666629</el>
+            <el>419.5 785.666666666666629</el>
+            <el>299.5 785.666666666666629</el>
+            <el>179.5 785.666666666666629</el>
+            <el>59.666666666666664 785.666666666666629</el>
+         </Centers>
+      </FullSpecifTarget>
+   </Data>
+</Root>

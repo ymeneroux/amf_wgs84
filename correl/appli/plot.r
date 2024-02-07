@@ -1,4 +1,4 @@
-targets = c("50", "51", "52", "53", "54", "55", "56", "G2", "S33")
+targets = c("CP1", "CP2", "CP3", "CP4", "CP5")
 
 for (i in 1:length(targets)){
 	pdf(paste(targets[i], ".pdf", sep=''))
